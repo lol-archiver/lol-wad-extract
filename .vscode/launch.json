@@ -1,0 +1,16 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "pwa-node",
+			"request": "launch",
+			"name": "0: Test Local",
+			"skipFiles": [
+				"<node_internals>/**"
+			],
+			"program": "${workspaceFolder}/test/local.js",
+			"runtimeExecutable": "node.exe",
+			"console": "integratedTerminal"
+		},
+	]
+}
