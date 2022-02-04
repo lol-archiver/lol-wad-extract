@@ -4,6 +4,7 @@ import { tmpdir } from 'os';
 
 import GZIP from 'node-gzip';
 import ZSTD from 'node-zstandard';
+import XXHash from 'xxhashjs';
 
 
 import Biffer from '@nuogz/biffer';
@@ -23,12 +24,45 @@ const unzstd = async (buffer, pathSave = pathTempOutputZSTD, returnBuffer = true
 	if(returnBuffer) { return readFileSync(pathTempOutputZSTD); }
 };
 
+
+export const hashWAD = function(string, isHex = false) {
+	if(typeof string != 'string') { throw 'argv not String'; }
+
+	const stringLower = string.toLowerCase();
+	const bufferString = Buffer.from(stringLower);
+	const bufferHash = Buffer.from(XXHash.h64(bufferString, 0).toString(16).padStart(16, '0').split(/(?<=^(?:.{2})+)(?!$)/).reverse().map(a => Number(`0x${a}`)));
+	const hexHashRaw = bufferHash.swap64().toString('hex');
+	const bntHash = BigInt(`0x${hexHashRaw}`);
+
+	if(isHex) {
+		const hexHash = bntHash.toString('16').toUpperCase();
+		const hexHashPad = hexHash.padStart(10, '0');
+
+		return hexHashPad;
+	}
+
+	return bntHash;
+};
+
+
 /**
  * A function to extract specified files from League of Legends WAD file.
- * @version 1.0.0-2022.02.04.01
+ * @version 1.1.0-2022.02.04.02
  * @function
  */
-const extractWAD = async (pathWAD, mapHash_File) => {
+export const extractWAD = async (pathWAD, infosExtractRaw, typeKey = 'hash') => {
+	const infosExtract = Object.entries(infosExtractRaw)
+		.reduce((infosExtract, [pathIngame, infoSaveRaw]) => {
+			infosExtract[hashWAD(pathIngame)] = {
+				pathIngame,
+				infoSaveRaw
+			};
+
+			return infosExtract;
+		}, {});
+
+
+
 	const fdWAD = await openSync(pathWAD);
 
 	const bifferWAD = new Biffer(fdWAD);
@@ -61,31 +95,36 @@ const extractWAD = async (pathWAD, mapHash_File) => {
 		}
 
 
-		if(!(hash in mapHash_File)) { continue; }
+		if(!(hash in infosExtract)) { continue; }
 
-		const [typeSave, paramSave] = mapHash_File[hash].split('|');
+
+		const { pathIngame, infoSaveRaw } = infosExtract[hash];
+
+		const [typeSave, paramSave] = infoSaveRaw.split('|');
+		const keySave = typeKey == 'hash' ? hash : pathIngame;
 
 		const bifferExtract = new Biffer(fdWAD);
 		bifferExtract.seek(offset);
 
 		const bufferRaw = bifferExtract.slice(compressedSize);
 
+
 		if(typeSave == 'buffer') {
 			if(type == 0) {
-				result[hash] = bufferRaw;
+				result[keySave] = bufferRaw;
 			}
 			else if(type == 1) {
-				result[hash] = await GZIP.ungzip(bufferRaw);
+				result[keySave] = await GZIP.ungzip(bufferRaw);
 			}
 			else if(type == 2) {
 				throw Error('unused extract type');
 			}
 			else if(type == 3) {
-				result[hash] = await unzstd(bufferRaw);
+				result[keySave] = await unzstd(bufferRaw);
 			}
 		}
 		else if(typeSave == 'file') {
-			result[hash] = paramSave;
+			result[keySave] = paramSave;
 
 			if(type == 0) {
 				writeFileSync(paramSave, bufferRaw);
@@ -104,6 +143,3 @@ const extractWAD = async (pathWAD, mapHash_File) => {
 
 	return result;
 };
-
-
-export default extractWAD;

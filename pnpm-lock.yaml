@@ -5,11 +5,13 @@ specifiers:
   eslint: ^8.8.0
   node-gzip: ^1.1.2
   node-zstandard: ^1.2.4
+  xxhashjs: ^0.2.2
 
 dependencies:
   '@nuogz/biffer': 1.2.0
   node-gzip: 1.1.2
   node-zstandard: 1.2.4
+  xxhashjs: 0.2.2
 
 devDependencies:
   eslint: 8.8.0
@@ -148,6 +150,10 @@ packages:
       shebang-command: 2.0.0
       which: 2.0.2
     dev: true
+
+  /cuint/0.2.2:
+    resolution: {integrity: sha1-QICG1AlVDCYxFVYZ6fp7ytw7mRs=}
+    dev: false
 
   /debug/4.3.3:
     resolution: {integrity: sha512-/zxw5+vh1Tfv+4Qn7a5nsbcJKPaSvCDhojn6FEl9vupwK2VCSDtEiEtqr8DFtzYFOdz63LBkxec7DYuc2jon6Q==}
@@ -595,3 +601,9 @@ packages:
   /wrappy/1.0.2:
     resolution: {integrity: sha1-tSQ9jz7BqjXxNkYFvA0QNuMKtp8=}
     dev: true
+
+  /xxhashjs/0.2.2:
+    resolution: {integrity: sha512-AkTuIuVTET12tpsVIQo+ZU6f/qDmKuRUcjaqR+OIvm+aCBsZ95i7UVY5WJ9TMsSaZ0DA2WxoZ4acu0sPH+OKAw==}
+    dependencies:
+      cuint: 0.2.2
+    dev: false
