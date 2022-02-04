@@ -1,5 +1,5 @@
 {
-	"name": "lol-wad-extract",
+	"name": "@nuogz/lol-wad-extract",
 	"version": "1.0.0",
 	"description": "A function to extract specified files from League of Legends WAD file",
 	"author": "Nuogz",
