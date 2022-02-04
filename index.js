@@ -1,4 +1,4 @@
-import { openSync, readFileSync, writeFileSync } from 'fs';
+import { closeSync, openSync, readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 import { tmpdir } from 'os';
 
@@ -47,10 +47,10 @@ export const hashWAD = function(string, isHex = false) {
 
 /**
  * A function to extract specified files from League of Legends WAD file.
- * @version 1.1.0-2022.02.04.02
+ * @version 1.2.0-2022.02.04.03
  * @function
  */
-export const extractWAD = async (pathWAD, infosExtractRaw, typeKey = 'hash') => {
+export const extractWAD = async (pathWAD, infosExtractRaw, typeKey = 'ingame') => {
 	const infosExtract = Object.entries(infosExtractRaw)
 		.reduce((infosExtract, [pathIngame, infoSaveRaw]) => {
 			infosExtract[hashWAD(pathIngame)] = {
@@ -63,7 +63,7 @@ export const extractWAD = async (pathWAD, infosExtractRaw, typeKey = 'hash') => 
 
 
 
-	const fdWAD = await openSync(pathWAD);
+	const fdWAD = openSync(pathWAD);
 
 	const bifferWAD = new Biffer(fdWAD);
 
@@ -100,8 +100,11 @@ export const extractWAD = async (pathWAD, infosExtractRaw, typeKey = 'hash') => 
 
 		const { pathIngame, infoSaveRaw } = infosExtract[hash];
 
-		const [typeSave, paramSave] = infoSaveRaw.split('|');
-		const keySave = typeKey == 'hash' ? hash : pathIngame;
+		let [typeSave, keySave, pathSave] = infoSaveRaw.split('|');
+
+		if(!keySave) { keySave = typeKey == 'ingame' ? pathIngame : hash; }
+		else if(keySave == '{hash}') { keySave = hash; }
+		else if(keySave == '{ingame}') { keySave = pathIngame; }
 
 		const bifferExtract = new Biffer(fdWAD);
 		bifferExtract.seek(offset);
@@ -124,22 +127,24 @@ export const extractWAD = async (pathWAD, infosExtractRaw, typeKey = 'hash') => 
 			}
 		}
 		else if(typeSave == 'file') {
-			result[keySave] = paramSave;
+			result[keySave] = pathSave;
 
 			if(type == 0) {
-				writeFileSync(paramSave, bufferRaw);
+				writeFileSync(pathSave, bufferRaw);
 			}
 			else if(type == 1) {
-				writeFileSync(paramSave, await GZIP.ungzip(bufferRaw));
+				writeFileSync(pathSave, await GZIP.ungzip(bufferRaw));
 			}
 			else if(type == 2) {
 				throw Error('unused extract type');
 			}
 			else if(type == 3) {
-				await unzstd(bufferRaw, paramSave, false);
+				await unzstd(bufferRaw, pathSave, false);
 			}
 		}
 	}
+
+	closeSync(fdWAD);
 
 	return result;
 };
