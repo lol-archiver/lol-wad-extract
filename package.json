@@ -1,6 +1,6 @@
 {
 	"name": "@nuogz/lol-wad-extract",
-	"version": "1.2.0",
+	"version": "1.2.1",
 	"description": "A function to extract specified files from League of Legends WAD file",
 	"author": "Nuogz",
 	"license": "LGPL-3.0-or-later",
@@ -10,12 +10,12 @@
 		"node": ">=14.18.1"
 	},
 	"dependencies": {
-		"@nuogz/biffer": "^1.2.0",
+		"@nuogz/biffer": "^1.2.1",
 		"node-gzip": "^1.1.2",
 		"node-zstandard": "^1.2.4",
 		"xxhashjs": "^0.2.2"
 	},
 	"devDependencies": {
-		"eslint": "^8.8.0"
+		"eslint": "^8.10.0"
 	}
 }

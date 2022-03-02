@@ -47,7 +47,7 @@ export const hashWAD = function(string, isHex = false) {
 
 /**
  * A function to extract specified files from League of Legends WAD file.
- * @version 1.2.0-2022.02.04.03
+ * @version 1.2.1-2022.03.02.01
  * @function
  */
 export const extractWAD = async (pathWAD, infosExtractRaw, typeKey = 'ingame') => {
