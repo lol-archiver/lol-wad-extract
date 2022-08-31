@@ -1,3 +1,4 @@
 /node_modules
 
-/test/local*.js
+/test/local
+/test/*.local.js

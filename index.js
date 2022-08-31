@@ -10,6 +10,7 @@ import XXHash from 'xxhashjs';
 import Biffer from '@nuogz/biffer';
 
 
+
 const dirTemp = tmpdir();
 const pathTempInputZSTD = resolve(dirTemp, 'lol-wad-extract-zstd-input');
 const pathTempOutputZSTD = resolve(dirTemp, 'lol-wad-extract-zstd-output');
@@ -25,7 +26,7 @@ const unzstd = async (buffer, pathSave = pathTempOutputZSTD, returnBuffer = true
 };
 
 
-export const hashWAD = function(string, isHex = false) {
+export const hashWAD = (string, isHex = false) => {
 	if(typeof string != 'string') { throw 'argv not String'; }
 
 	const stringLower = string.toLowerCase();
@@ -45,11 +46,6 @@ export const hashWAD = function(string, isHex = false) {
 };
 
 
-/**
- * A function to extract specified files from League of Legends WAD file.
- * @version 1.2.2-2022.03.02.02
- * @function
- */
 export const extractWAD = async (pathWAD, infosExtractRaw, typeKey = 'ingame') => {
 	const infosExtract = Object.entries(infosExtractRaw)
 		.reduce((infosExtract, [pathIngame, infoSaveRaw]) => {
@@ -67,7 +63,6 @@ export const extractWAD = async (pathWAD, infosExtractRaw, typeKey = 'ingame') =
 
 	const bifferWAD = new Biffer(fdWAD);
 
-	// eslint-disable-next-line no-unused-vars
 	const [magic, versionMajor, versionMinor] = bifferWAD.unpack('2sBB');
 
 	if(versionMajor == 1) {
@@ -90,7 +85,6 @@ export const extractWAD = async (pathWAD, infosExtractRaw, typeKey = 'ingame') =
 			[hash, offset, compressedSize, size, type] = bifferWAD.unpack('QIIII');
 		}
 		else {
-			// eslint-disable-next-line no-unused-vars
 			[hash, offset, compressedSize, size, type, duplicate, , , sha256] = bifferWAD.unpack('QIIIBBBBQ');
 		}
 
