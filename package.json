@@ -8,7 +8,7 @@
 		"type": "git",
 		"url": "git+https://github.com/lol-archiver/lol-wad-extract.git"
 	},
-	"private": "false",
+	"private": false,
 	"type": "module",
 	"typesSource": [
 		"node"
@@ -20,8 +20,7 @@
 	"main": "./index.js",
 	"files": [
 		"index.js",
-		"types/**",
-		"**/*.d.ts"
+		"types/**"
 	],
 	"typings": "./types/index.d.ts",
 	"scripts": {
