@@ -6,139 +6,142 @@ import GZIP from 'node-gzip';
 import ZSTD from 'node-zstandard';
 import XXHash from 'xxhashjs';
 
-
 import Biffer from '@nuogz/biffer';
+
+
+/** @typedef {import('./bases.d.ts').RawExtractConfig} RawExtractConfig */
+/** @typedef {import('./bases.d.ts').ExtractConfig} ExtractConfig */
 
 
 
 const dirTemp = tmpdir();
-const pathTempInputZSTD = resolve(dirTemp, 'lol-wad-extract-zstd-input');
-const pathTempOutputZSTD = resolve(dirTemp, 'lol-wad-extract-zstd-output');
+const fileTempInputZSTD = resolve(dirTemp, 'lol-wad-extract-zstd-input');
+const fileTempOutputZSTD = resolve(dirTemp, 'lol-wad-extract-zstd-output');
 
-const unzstd = async (buffer, pathSave = pathTempOutputZSTD, returnBuffer = true) => {
-	writeFileSync(pathTempInputZSTD, buffer);
+const unzstd = async (buffer, fileSave = fileTempOutputZSTD, returnBuffer = true) => {
+	writeFileSync(fileTempInputZSTD, buffer);
 
-	await new Promise((resolve, reject) =>
-		ZSTD.decompress(pathTempInputZSTD, pathSave, err => err ? reject(err) : resolve())
+	await new Promise((resolver, rejecter) =>
+		ZSTD.decompress(fileTempInputZSTD, fileSave, error => error ? rejecter(error) : resolver())
 	);
 
-	if(returnBuffer) { return readFileSync(pathTempOutputZSTD); }
+	if(returnBuffer) { return readFileSync(fileTempOutputZSTD); }
 };
 
 
+/**
+ * @param {string} string
+ * @param {boolean} [isHex=false]
+ * @returns {bigint}
+ */
 export const hashWAD = (string, isHex = false) => {
-	if(typeof string != 'string') { throw 'argv not String'; }
+	if(typeof string != 'string') { throw Error('argv not String'); }
+
 
 	const stringLower = string.toLowerCase();
 	const bufferString = Buffer.from(stringLower);
 	const bufferHash = Buffer.from(XXHash.h64(bufferString, 0).toString(16).padStart(16, '0').split(/(?<=^(?:.{2})+)(?!$)/).reverse().map(a => Number(`0x${a}`)));
 	const hexHashRaw = bufferHash.swap64().toString('hex');
-	const bntHash = BigInt(`0x${hexHashRaw}`);
+	const bigIntHash = BigInt(`0x${hexHashRaw}`);
+
 
 	if(isHex) {
-		const hexHash = bntHash.toString('16').toUpperCase();
+		const hexHash = bigIntHash.toString('16');
 		const hexHashPad = hexHash.padStart(10, '0');
 
 		return hexHashPad;
 	}
 
-	return bntHash;
+
+	return bigIntHash;
 };
 
 
-export const extractWAD = async (pathWAD, infosExtractRaw, typeKey = 'ingame') => {
-	const infosExtract = Object.entries(infosExtractRaw)
-		.reduce((infosExtract, [pathIngame, infoSaveRaw]) => {
-			infosExtract[hashWAD(pathIngame)] = {
-				pathIngame,
-				infoSaveRaw
-			};
 
-			return infosExtract;
-		}, {});
+/**
+ * @param {string} fileWAD
+ * @param {RawExtractConfig[]} configsExtractRaw
+ * @returns {Promise<ExtractConfig[]>}
+ */
+export const extractWAD = async (fileWAD, configsExtractRaw) => {
+	let fdWAD;
+	try {
+		fdWAD = openSync(fileWAD);
+		const bifferWAD = new Biffer(fdWAD);
 
 
+		/** @type {Object<string,ExtractConfig>} */
+		const configsExtract$hash = {};
+		/** @type {ExtractConfig[]} */
+		const configsExtract = [];
+		for(const configExtract of configsExtractRaw) {
+			const hashInpack = hashWAD(configExtract.fileInpack);
 
-	const fdWAD = openSync(pathWAD);
+			configsExtract.push(configsExtract$hash[hashInpack] =
+				Object.assign({ hashInpack }, configExtract)
+			);
+		}
 
-	const bifferWAD = new Biffer(fdWAD);
 
-	const [magic, versionMajor, versionMinor] = bifferWAD.unpack('2sBB');
+		// eslint-disable-next-line no-unused-vars
+		const [magic, versionMajor, versionMinor] = bifferWAD.unpack('2sBB');
 
-	if(versionMajor == 1) {
-		bifferWAD.seek(8);
-	}
-	else if(versionMajor == 2) {
-		bifferWAD.seek(100);
-	}
-	else if(versionMajor == 3) {
-		bifferWAD.seek(268);
-	}
-
-	const [entryCount] = bifferWAD.unpack('I');
-	const result = {};
-
-	for(let i = 0; i < entryCount; i++) {
-		let hash, offset, size, type, compressedSize, duplicate, sha256;
 
 		if(versionMajor == 1) {
-			[hash, offset, compressedSize, size, type] = bifferWAD.unpack('QIIII');
+			bifferWAD.seek(8);
 		}
-		else {
-			[hash, offset, compressedSize, size, type, duplicate, , , sha256] = bifferWAD.unpack('QIIIBBBBQ');
+		else if(versionMajor == 2) {
+			bifferWAD.seek(100);
+		}
+		else if(versionMajor == 3) {
+			bifferWAD.seek(268);
 		}
 
 
-		if(!(hash in infosExtract)) { continue; }
+		const [sizeEntry] = bifferWAD.unpack('I');
+
+		for(let i = 0; i < sizeEntry; i++) {
+			const [hash, offset, compressedSize, /* size */, type/* , duplicate, , , sha256 */] =
+				bifferWAD.unpack(versionMajor == 1 ? 'QIIII' : 'QIIIBBBBQ');
 
 
-		const { pathIngame, infoSaveRaw } = infosExtract[hash];
-
-		let [typeSave, keySave, pathSave] = infoSaveRaw.split('|');
-
-		if(!keySave) { keySave = typeKey == 'ingame' ? pathIngame : hash; }
-		else if(keySave == '{hash}') { keySave = hash; }
-		else if(keySave == '{ingame}') { keySave = pathIngame; }
-
-		const bifferExtract = new Biffer(fdWAD);
-		bifferExtract.seek(offset);
-
-		const bufferRaw = bifferExtract.slice(compressedSize);
+			const configExtract = configsExtract$hash[String(hash)];
+			if(!configExtract) { continue; }
 
 
-		if(typeSave == 'buffer') {
+
+
+			const bifferExtract = new Biffer(fdWAD);
+			bifferExtract.seek(offset);
+
+			const bufferRaw = bifferExtract.slice(compressedSize);
+
+
 			if(type == 0) {
-				result[keySave] = bufferRaw;
+				configExtract.buffer = bufferRaw;
 			}
 			else if(type == 1) {
-				result[keySave] = await GZIP.ungzip(bufferRaw);
+				configExtract.buffer = await GZIP.ungzip(bufferRaw);
 			}
 			else if(type == 2) {
 				throw Error('unused extract type');
 			}
 			else if(type == 3) {
-				result[keySave] = await unzstd(bufferRaw);
+				configExtract.buffer = await unzstd(bufferRaw);
 			}
-		}
-		else if(typeSave == 'file') {
-			result[keySave] = pathSave;
 
-			if(type == 0) {
-				writeFileSync(pathSave, bufferRaw);
-			}
-			else if(type == 1) {
-				writeFileSync(pathSave, await GZIP.ungzip(bufferRaw));
-			}
-			else if(type == 2) {
-				throw Error('unused extract type');
-			}
-			else if(type == 3) {
-				await unzstd(bufferRaw, pathSave, false);
+
+			if(configExtract.fileSave) {
+				writeFileSync(configExtract.fileSave, configExtract.buffer);
+
+				configExtract.saved = true;
 			}
 		}
+
+
+		return configsExtract.filter(config => config.buffer);
 	}
-
-	closeSync(fdWAD);
-
-	return result;
+	finally {
+		if(typeof fdWAD == 'number') { closeSync(fdWAD); }
+	}
 };
