@@ -1,5 +1,4 @@
 {
-	"eslint.onIgnoredFiles": "warn",
 	"files.eol": "\n",
 	"files.insertFinalNewline": true,
 	"files.trimFinalNewlines": true,

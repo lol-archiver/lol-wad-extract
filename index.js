@@ -1,32 +1,35 @@
-import { closeSync, openSync, readFileSync, writeFileSync } from 'fs';
-import { resolve } from 'path';
-import { tmpdir } from 'os';
+import { spawnSync } from 'node:child_process';
+import { closeSync, openSync, writeFileSync } from 'node:fs';
+import { gunzipSync, zstdDecompressSync } from 'node:zlib';
 
-import GZIP from 'node-gzip';
-import ZSTD from 'node-zstandard';
 import XXHash from 'xxhashjs';
 
 import Biffer from '@nuogz/biffer';
 
 
+/** @typedef {import('./bases.d.ts').ExtractOption} ExtractOption */
 /** @typedef {import('./bases.d.ts').RawExtractConfig} RawExtractConfig */
 /** @typedef {import('./bases.d.ts').ExtractConfig} ExtractConfig */
 
 
 
-const dirTemp = tmpdir();
-const fileTempInputZSTD = resolve(dirTemp, 'lol-wad-extract-zstd-input');
-const fileTempOutputZSTD = resolve(dirTemp, 'lol-wad-extract-zstd-output');
+/**
+ * @param {Buffer} buffer
+ * @param {{ fileZSTD: string, maxBuffer: number }} option
+ * @returns {buffer}
+ */
+const unzstd = (buffer, option) => {
+	const result = spawnSync(option.fileZSTD, ['-d'], {
+		input: buffer,
+		maxBuffer: option.maxBuffer || buffer.length * 16,
+		encoding: 'buffer',
+	});
 
-const unzstd = async (buffer, fileSave = fileTempOutputZSTD, returnBuffer = true) => {
-	writeFileSync(fileTempInputZSTD, buffer);
+	if(result.error || result.stderr.length) { throw Error(result.error || result.stderr.toString()); }
 
-	await new Promise((resolver, rejecter) =>
-		ZSTD.decompress(fileTempInputZSTD, fileSave, error => error ? rejecter(error) : resolver())
-	);
-
-	if(returnBuffer) { return readFileSync(fileTempOutputZSTD); }
+	return result.stdout;
 };
+
 
 
 /**
@@ -61,9 +64,10 @@ export const hashWAD = (string, isHex = false) => {
 /**
  * @param {string} fileWAD
  * @param {RawExtractConfig[]} configsExtractRaw
+ * @param {ExtractOption} [option={}]
  * @returns {Promise<ExtractConfig[]>}
  */
-export const extractWAD = async (fileWAD, configsExtractRaw) => {
+export const extractWAD = async (fileWAD, configsExtractRaw, option = {}) => {
 	let fdWAD;
 	try {
 		fdWAD = openSync(fileWAD);
@@ -121,13 +125,21 @@ export const extractWAD = async (fileWAD, configsExtractRaw) => {
 				configExtract.buffer = bufferRaw;
 			}
 			else if(type == 1) {
-				configExtract.buffer = await GZIP.ungzip(bufferRaw);
+				configExtract.buffer = gunzipSync(bufferRaw);
 			}
 			else if(type == 2) {
 				throw Error('unused extract type');
 			}
 			else if(type == 3) {
-				configExtract.buffer = await unzstd(bufferRaw);
+				if(option.fileZSTD) {
+					configExtract.buffer = await unzstd(bufferRaw, {
+						fileZSTD: option.fileZSTD,
+						maxBuffer: option.maxBufferUnzstd
+					});
+				}
+				else {
+					configExtract.buffer = zstdDecompressSync(bufferRaw);
+				}
 			}
 
 

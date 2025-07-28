@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## v4.0.0 - 2025.07.28 20
+* refactor: fully embrace `node:zlib` for decompress gzip datas and zstandard datas
+* refactor: remove old dependencies `node-gzip` and `node-zstandard`
+* feat: `extractWAD()` has a third parameter `option`.
+  * By passing `option.fileZSTD`, the function will use the external ZSTD via spawn
+  * By passing `option.maxBufferUnzstd`, option `maxBuffer` when spawning the external ZSTD
+* docs: update types
+* chore: improve enviroment
+* chore: bump up dependencies
+
+
 ## v3.0.0 - 2024.11.11 18
 * refactor: improve code logic and style
 * deps: bump up dependencies

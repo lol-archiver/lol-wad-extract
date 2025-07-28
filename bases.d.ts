@@ -1,13 +1,18 @@
+export type ExtractOption = {
+	fileZSTD: string;
+	maxBufferUnzstd?: number;
+}
+
 export type RawExtractConfig = {
-	fileInpack: string,
+	fileInpack: string;
 	fileSave: string;
 }
 
 export type ExtractConfig = {
-	fileInpack: string,
+	fileInpack: string;
 	fileSave: string;
 
-	hashInpack?: string,
+	hashInpack?: string;
 	buffer?: Buffer;
 	saved?: boolean;
 }
