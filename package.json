@@ -1,6 +1,6 @@
 {
 	"name": "@lol-archiver/lol-wad-extract",
-	"version": "4.0.0",
+	"version": "4.1.0",
 	"description": "Extract specified files from League of Legends WAD file",
 	"author": "DanoR",
 	"license": "LGPL-3.0-or-later",
@@ -9,6 +9,7 @@
 		"url": "git+https://github.com/lol-archiver/lol-wad-extract.git"
 	},
 	"private": false,
+	"sideEffects": false,
 	"type": "module",
 	"typesSource": [
 		"node"
@@ -16,27 +17,22 @@
 	"engines": {
 		"node": ">=24"
 	},
-	"sideEffects": false,
-	"main": "./index.js",
 	"files": [
 		"index.js",
 		"types/**"
 	],
-	"typings": "./types/index.d.ts",
-	"scripts": {
-		"declare": "tsc",
-		"postdeclare": "copy /Y bases.d.ts types"
-	},
+	"main": "./index.js",
+	"types": "./types/index.d.ts",
 	"dependencies": {
-		"@nuogz/biffer": "^2.7.1",
+		"@danor-lib/biffer": "^3.0.1",
+		"@danor-lib/error": "^1.0.0",
 		"xxhashjs": "^0.2.2"
 	},
 	"devDependencies": {
-		"@eslint/js": "^9.32.0",
-		"@stylistic/eslint-plugin-js": "^4.4.1",
-		"@types/node": "^24.1.0",
-		"eslint": "^9.32.0",
-		"globals": "^16.3.0",
-		"typescript": "^5.8.3"
+		"@eslint/js": "^10.0.1",
+		"@stylistic/eslint-plugin": "^5.10.0",
+		"@types/node": "^24.12.2",
+		"eslint": "^10.2.1",
+		"globals": "^17.5.0"
 	}
 }

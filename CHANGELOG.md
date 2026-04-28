@@ -1,5 +1,17 @@
 # CHANGELOG
 
+v4.1.0 - 2026.04.28 11
+* feat: add a hash pool in `hashWAD()` to reduce redundant hash computations
+* docs: completely rewrite README with detailed API documentation
+* refactor: refactor error handling with `@danor-lib/error`
+* feat: add `src/texter.js` for styled error messages
+* regular: update enviroment
+* regular: bump up dependencies
+  * new dependency `@danor-lib/error`
+  * use `@danor-lib/biffer` instead `@nuogz/biffer`
+  * update eslint majar version to `10`
+
+
 ## v4.0.0 - 2025.07.28 20
 * refactor: fully embrace `node:zlib` for decompress gzip datas and zstandard datas
 * refactor: remove old dependencies `node-gzip` and `node-zstandard`

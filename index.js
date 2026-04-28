@@ -4,16 +4,17 @@ import { gunzipSync, zstdDecompressSync } from 'node:zlib';
 
 import XXHash from 'xxhashjs';
 
-import Biffer from '@nuogz/biffer';
+import { RichError } from '@danor-lib/error';
+import Biffer from '@danor-lib/biffer';
 
+import { T } from './src/texter.js';
 
-/** @typedef {import('./bases.d.ts').ExtractOption} ExtractOption */
-/** @typedef {import('./bases.d.ts').RawExtractConfig} RawExtractConfig */
-/** @typedef {import('./bases.d.ts').ExtractConfig} ExtractConfig */
+/** @import { ExtractConfig, ExtractOption, RawExtractConfig } from './types.ts' */
 
 
 
 /**
+ * Decompresses a buffer using zstd
  * @param {Buffer} buffer
  * @param {{ fileZSTD: string, maxBuffer: number }} option
  * @returns {buffer}
@@ -25,49 +26,68 @@ const unzstd = (buffer, option) => {
 		encoding: 'buffer',
 	});
 
-	if(result.error || result.stderr.length) { throw Error(result.error || result.stderr.toString()); }
+	if(result.error || result.stderr?.length) {
+		throw RichError(T.spawnError(result.error || result.stderr.toString()), {
+			code: 'spawn-error', at: 'lol-wad-extract/unzstd()',
+			data: { buffer, fileZSTD: option.fileZSTD, maxBuffer: option.maxBuffer },
+			cause: result.error || result.stderr?.toString(),
+		});
+	}
 
 	return result.stdout;
 };
 
 
 
+/** @type {Object<string,bigint>} */
+const hashPool = {};
+
 /**
- * @param {string} string
- * @param {boolean} [isHex=false]
- * @returns {bigint}
+ * Calculates the hash of a WAD file entry
+ * @param {string} string The input string to hash, typically the file path within the WAD
+ * @param {string} [format='bigint'] The format of the returned hash. Can be 'bigint' or 'hexpad'
+ * @returns {bigint|string}
  */
-export const hashWAD = (string, isHex = false) => {
-	if(typeof string != 'string') { throw Error('argv not String'); }
-
-
-	const stringLower = string.toLowerCase();
-	const bufferString = Buffer.from(stringLower);
-	const bufferHash = Buffer.from(XXHash.h64(bufferString, 0).toString(16).padStart(16, '0').split(/(?<=^(?:.{2})+)(?!$)/).reverse().map(a => Number(`0x${a}`)));
-	const hexHashRaw = bufferHash.swap64().toString('hex');
-	const bigIntHash = BigInt(`0x${hexHashRaw}`);
-
-
-	if(isHex) {
-		const hexHash = bigIntHash.toString('16');
-		const hexHashPad = hexHash.padStart(10, '0');
-
-		return hexHashPad;
+export const hashWAD = (string, format = 'bigint') => {
+	if(typeof string != 'string') {
+		throw RichError(T.invalidString(string), {
+			code: 'invalid-string', at: 'lol-wad-extract/hashWAD()',
+			data: { string, isHex: format },
+		});
 	}
 
 
-	return bigIntHash;
+	const stringLower = string.toLowerCase();
+
+	let hashBigint = hashPool[stringLower];
+	if(!hashBigint) {
+		const bufferString = Buffer.from(stringLower);
+
+		hashBigint = BigInt(XXHash.h64(bufferString, 0));
+		hashPool[stringLower] = hashBigint;
+	}
+
+
+	if(format == 'hexpad') {
+		const hashHex = hashBigint.toString(16);
+
+		return hashHex.padStart(10, '0');
+	}
+
+
+	return hashBigint;
 };
 
 
 
 /**
- * @param {string} fileWAD
- * @param {RawExtractConfig[]} configsExtractRaw
- * @param {ExtractOption} [option={}]
+ * Extracts files from a WAD archive based on the provided configurations
+ * @param {string} fileWAD The path to the WAD file to extract from
+ * @param {RawExtractConfig[]} configsExtractRaw An array of raw extraction configurations, each containing the file path within the WAD and optional save path
+ * @param {ExtractOption} [options={}] Optional extraction options, such as the path to the zstd executable and maximum buffer size for decompression
  * @returns {Promise<ExtractConfig[]>}
  */
-export const extractWAD = async (fileWAD, configsExtractRaw, option = {}) => {
+export const extractWAD = async (fileWAD, configsExtractRaw = [], options = {}) => {
 	let fdWAD;
 	try {
 		fdWAD = openSync(fileWAD);
@@ -118,7 +138,7 @@ export const extractWAD = async (fileWAD, configsExtractRaw, option = {}) => {
 			const bifferExtract = new Biffer(fdWAD);
 			bifferExtract.seek(offset);
 
-			const bufferRaw = bifferExtract.slice(compressedSize);
+			const bufferRaw = bifferExtract.slice(compressedSize, { wrap: false });
 
 
 			if(type == 0) {
@@ -128,13 +148,16 @@ export const extractWAD = async (fileWAD, configsExtractRaw, option = {}) => {
 				configExtract.buffer = gunzipSync(bufferRaw);
 			}
 			else if(type == 2) {
-				throw Error('unused extract type');
+				throw RichError(T.unusedExtractType(type), {
+					code: 'unused-extract-type', at: 'lol-wad-extract/extractWAD()',
+					data: { type, bufferRaw, hash, offset, compressedSize },
+				});
 			}
 			else if(type == 3) {
-				if(option.fileZSTD) {
+				if(options.fileZSTD) {
 					configExtract.buffer = await unzstd(bufferRaw, {
-						fileZSTD: option.fileZSTD,
-						maxBuffer: option.maxBufferUnzstd
+						fileZSTD: options.fileZSTD,
+						maxBuffer: options.maxBufferUnzstd
 					});
 				}
 				else {
