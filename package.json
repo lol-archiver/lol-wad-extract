@@ -19,6 +19,7 @@
 	},
 	"files": [
 		"index.js",
+		"src/**/*.js",
 		"types/**"
 	],
 	"main": "./index.js",
