@@ -9,7 +9,7 @@
 
 # @lol-archiver/lol-wad-extract
 ![Version](https://img.shields.io/github/package-json/v/lol-archiver/lol-wad-extract?style=flat-square)
-[![License](https://img.shields.io/github/license/lol-archiver/lol-wad-extract?style=flat-square)](https://www.gnu.org/licenses/lgpl-3.0-standalone.html)
+[![License](https://img.shields.io/github/license/lol-archiver/lol-wad-extract?style=flat-square)](https://opensource.org/license/mit)
 
 A League of Legends WAD archive extraction tool. Provides the ability to compute WAD internal path hashes, extract files on demand, and automatically decompress them.
 
@@ -164,3 +164,11 @@ If a WAD contains Zstandard-compressed entries, you have two options:
 ### Passing duplicate fileInpack
 
 If `configsExtractRaw` passed to `extractWAD` contains the same `fileInpack` multiple times, only the last configuration provided will take effect.
+
+## Error Code
+
+| Code                | At                                | Description                                            | Context Data                           |
+| :------------------ | :-------------------------------- | :----------------------------------------------------- | :------------------------------------- |
+| spawn-zstd-error    | lol-wad-extract/unzstd            | Error occurred while running ZSTD                      | { buffer, fileZSTD, maxBuffer }        |
+| invalid-string      | lol-wad-extract/hashWAD(1:string) | `hashWAD()`'s `string` parameter must be a string type | { string, isHex }                      |
+| unused-extract-type | lol-wad-extract/extractWAD        | Unused decompression type                              | { type, hash, offset, compressedSize } |

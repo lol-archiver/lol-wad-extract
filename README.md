@@ -9,7 +9,7 @@
 
 # @lol-archiver/lol-wad-extract
 ![Version](https://img.shields.io/github/package-json/v/lol-archiver/lol-wad-extract?style=flat-square)
-[![License](https://img.shields.io/github/license/lol-archiver/lol-wad-extract?style=flat-square)](https://www.gnu.org/licenses/lgpl-3.0-standalone.html)
+[![License](https://img.shields.io/github/license/lol-archiver/lol-wad-extract?style=flat-square)](https://opensource.org/license/mit)
 
 一个英雄联盟 WAD 归档文件提取工具。提供了计算 WAD 内部路径哈希，以及按需提取、自动解压文件的能力。
 
@@ -164,3 +164,11 @@ interface ExtractConfig {
 ### 传递相同的fileInpack
 
 如果`extractWAD`的configsExtractRaw参数中传入相同的`fileInpack`，则只有最后一个传递的配置生效
+
+## 错误代码
+
+| 代码                | 位置                              | 描述                                         | 上下文数据                             |
+| :------------------ | :-------------------------------- | :------------------------------------------- | :------------------------------------- |
+| spawn-zstd-error    | lol-wad-extract/unzstd            | 运行ZSTD时发送错误                           | { buffer, fileZSTD, maxBuffer }        |
+| invalid-string      | lol-wad-extract/hashWAD(1:string) | `hashWAD()` 的 `string` 参数必须为字符串类型 | { string, isHex }                      |
+| unused-extract-type | lol-wad-extract/extractWAD        | 未使用的解压类型                             | { type, hash, offset, compressedSize } |

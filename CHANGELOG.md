@@ -1,6 +1,19 @@
 # CHANGELOG
 
-v4.1.0 - 2026.04.28 11
+## v4.2.0 - 2026.05.27 14
+* docs: **IMPORTANT!** update license to ***MIT***
+* refactor!: due to a change in design philosophy, remove all error message text
+  * in my design philosophy, an error should only contain a code and associated data. text-based message should be rendered by the terminal (including i18n and terminal highlighting)
+* regular!: bump up Node.js requirement to `>=26`
+  * this requirement does not mean the library cannot run on older versions of Node.js. it only indicates the major version I am currently using
+* docs: add error code reference table
+* improve: standardize the `at` value of RichError thrown in code
+* regular: update enviroment
+* regular: bump up dependencies
+  * bump up `@danor-lib/error` to `v2.x`
+
+
+## v4.1.0 - 2026.04.28 11
 * feat: add a hash pool in `hashWAD()` to reduce redundant hash computations
 * docs: completely rewrite README with detailed API documentation
 * refactor: refactor error handling with `@danor-lib/error`

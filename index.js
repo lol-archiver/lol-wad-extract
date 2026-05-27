@@ -5,9 +5,7 @@ import { gunzipSync, zstdDecompressSync } from 'node:zlib';
 import XXHash from 'xxhashjs';
 
 import { RichError } from '@danor-lib/error';
-import Biffer from '@danor-lib/biffer';
-
-import { T } from './src/texter.js';
+import { Biffer } from '@danor-lib/biffer';
 
 /** @import { ExtractConfig, ExtractOption, RawExtractConfig } from './types.ts' */
 
@@ -16,20 +14,20 @@ import { T } from './src/texter.js';
 /**
  * Decompresses a buffer using zstd
  * @param {Buffer} buffer
- * @param {{ fileZSTD: string, maxBuffer: number }} option
+ * @param {{ fileZSTD: string, maxBuffer: number }} options
  * @returns {buffer}
  */
-const unzstd = (buffer, option) => {
-	const result = spawnSync(option.fileZSTD, ['-d'], {
+const unzstd = (buffer, options) => {
+	const result = spawnSync(options.fileZSTD, ['-d'], {
 		input: buffer,
-		maxBuffer: option.maxBuffer || buffer.length * 16,
+		maxBuffer: options.maxBuffer || buffer.length * 16,
 		encoding: 'buffer',
 	});
 
 	if(result.error || result.stderr?.length) {
-		throw RichError(T.spawnError(result.error || result.stderr.toString()), {
-			code: 'spawn-error', at: 'lol-wad-extract/unzstd()',
-			data: { buffer, fileZSTD: option.fileZSTD, maxBuffer: option.maxBuffer },
+		throw new RichError({
+			code: 'spawn-zstd-error', at: 'lol-wad-extract/unzstd',
+			data: { buffer, fileZSTD: options.fileZSTD, maxBuffer: options.maxBuffer },
 			cause: result.error || result.stderr?.toString(),
 		});
 	}
@@ -50,8 +48,8 @@ const hashPool = {};
  */
 export const hashWAD = (string, format = 'bigint') => {
 	if(typeof string != 'string') {
-		throw RichError(T.invalidString(string), {
-			code: 'invalid-string', at: 'lol-wad-extract/hashWAD()',
+		throw new RichError({
+			code: 'invalid-string', at: 'lol-wad-extract/hashWAD(1:string)',
 			data: { string, isHex: format },
 		});
 	}
@@ -148,8 +146,8 @@ export const extractWAD = async (fileWAD, configsExtractRaw = [], options = {}) 
 				configExtract.buffer = gunzipSync(bufferRaw);
 			}
 			else if(type == 2) {
-				throw RichError(T.unusedExtractType(type), {
-					code: 'unused-extract-type', at: 'lol-wad-extract/extractWAD()',
+				throw new RichError({
+					code: 'unused-extract-type', at: 'lol-wad-extract/extractWAD',
 					data: { type, bufferRaw, hash, offset, compressedSize },
 				});
 			}

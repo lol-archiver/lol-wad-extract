@@ -15,7 +15,7 @@ export function hashWAD(string: string, format?: string): bigint | string;
  * Extracts files from a WAD archive based on the provided configurations
  * @param {string} fileWAD The path to the WAD file to extract from
  * @param {RawExtractConfig[]} configsExtractRaw An array of raw extraction configurations, each containing the file path within the WAD and optional save path
- * @param {ExtractOption} [option={}] Optional extraction options, such as the path to the zstd executable and maximum buffer size for decompression
+ * @param {ExtractOption} [options={}] Optional extraction options, such as the path to the zstd executable and maximum buffer size for decompression
  * @returns {Promise<ExtractConfig[]>}
  */
-export function extractWAD(fileWAD: string, configsExtractRaw: RawExtractConfig[], option?: ExtractOption): Promise<ExtractConfig[]>;
+export function extractWAD(fileWAD: string, configsExtractRaw: RawExtractConfig[], options?: ExtractOption): Promise<ExtractConfig[]>;
